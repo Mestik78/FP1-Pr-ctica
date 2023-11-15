@@ -16,7 +16,7 @@ const int CHAR_ESQUINA_SUPERIOR_DERECHA = 187; // ═╗
 const int CHAR_ESQUINA_INFERIOR_IZQUIERDA = 200; // ╚═
 const int CHAR_ESQUINA_INFERIOR_DERECHA = 188; // ═╝
 const int CHAR_LINEA_VERTICAL = 186; // ║
-const int CHAR_COCHE = 63; //254 // ■
+const int CHAR_COCHE = 254; // ■
 const int CHAR_CLAVO = 193; // ┴
 const int CHAR_SORPRESA = 63; // ?
 const int CHAR_NORMAL = 32; // ‘ ‘
@@ -48,7 +48,28 @@ void simulaCarrera(tCarretera carretera);
 
 tCarretera carretera;
 
+void iniciaCarril(tCarretera carretera) {
+    for (int i = 0; i < LONG_CARRETERA; i++)
+    {
+        carretera[i] = NORMAL;
+    }
+    
+}
+
+tTipoPosicion stringToEnum(string s) {
+    tTipoPosicion tipo = NORMAL;
+    if (s == "CLAVO") {
+        tipo = CLAVO;
+    }
+    if (s == "SORPRESA") {
+        tipo = SORPRESA;
+    }
+    return tipo;
+}
+
 bool cargaCarretera(tCarretera& carretera) {
+    bool cargaCorrecta = false;
+
     string nombreArchivo;
     /*cout << "Introduce el nombre del archivo que se va a importar: ";
     cin >> nombreArchivo;*/
@@ -57,16 +78,37 @@ bool cargaCarretera(tCarretera& carretera) {
     archivo.open(nombreArchivo);
 
     if (archivo.is_open()) {
-        cout << "POLLA FELIZ";
-        string line;
-        while(getline(archivo, line)) {
-            cout << "line=" << line << endl;
+        iniciaCarril(carretera);
+
+        string linea;
+
+        while(getline(archivo, linea) && linea != "XX") {
+            int posPalabra = 0;
+            string palabra = "";
+            tTipoPosicion tipoActual;
+
+            for (auto c : linea) {
+                if (c == ' ') {
+                    if (posPalabra == 0) {
+                        tipoActual = stringToEnum(palabra);
+                    } else {
+                        if (posPalabra >= 1) {
+                            carretera[stoi(palabra)] = tipoActual;
+                        }
+                    }
+                    palabra = "";
+                    posPalabra++;
+                } else {
+                    palabra = palabra + c;
+                }
+            } 
+            carretera[stoi(palabra)] = tipoActual;
         }
+
         archivo.close();
-    } else {
-        cout << "POLLA TRISTE";
+        cargaCorrecta = true;
     }
-    return true;
+    return cargaCorrecta;
 }
 
 int main()
@@ -195,7 +237,6 @@ void dibujarCarril(int posCoche, tCarretera carretera)
                 cout << char(CHAR_SORPRESA);
             break;
         }
-        cout << char(carretera[i]);
     }
     cout << char(CHAR_LINEA_VERTICAL);
     cout << endl;
