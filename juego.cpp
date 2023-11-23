@@ -67,48 +67,43 @@ tTipoPosicion stringToEnum(string s) {
     return tipo;
 }
 
-bool cargaCarretera(tCarretera& carretera) {
-    bool cargaCorrecta = false;
+void leeCodigosAsignaturas(ifstream& archivo, string identificador, tCarretera& carretera) {
+	int count;
+    //la siguiente palabra es el número de veces que aparecen
+	archivo >> count;
+	int codigo;
+	tTipoPosicion tipo = stringToEnum(identificador);
+	for (int i = 0; i < count; i++) {
+		archivo >> codigo;
+		carretera[codigo] = tipo;
+	}
+}
 
+bool cargaCarretera(tCarretera& carretera) {
+    iniciaCarril(carretera);
+    
+    bool apertura = true;
     string nombreArchivo;
     /*cout << "Introduce el nombre del archivo que se va a importar: ";
     cin >> nombreArchivo;*/
     nombreArchivo = "carriles.txt"; // debug
-    ifstream archivo;
-    archivo.open(nombreArchivo);
-
-    if (archivo.is_open()) {
-        iniciaCarril(carretera);
-
-        string linea;
-
-        while(getline(archivo, linea) && linea != "XX") {
-            int posPalabra = 0;
-            string palabra = "";
-            tTipoPosicion tipoActual;
-
-            for (auto c : linea) {
-                if (c == ' ') {
-                    if (posPalabra == 0) {
-                        tipoActual = stringToEnum(palabra);
-                    } else {
-                        if (posPalabra >= 1) {
-                            carretera[stoi(palabra)] = tipoActual;
-                        }
-                    }
-                    palabra = "";
-                    posPalabra++;
-                } else {
-                    palabra = palabra + c;
-                }
-            } 
-            carretera[stoi(palabra)] = tipoActual;
-        }
-
-        archivo.close();
-        cargaCorrecta = true;
-    }
-    return cargaCorrecta;
+    
+	ifstream archivo;
+	archivo.open(nombreArchivo);
+	if (archivo.is_open()) {
+		string identificador;
+        //quita la primera palabra de "archivo" y la almacena en "palabra"
+		archivo >> identificador;
+		while (identificador != "XX") {
+			leeCodigosAsignaturas(archivo, identificador, carretera);
+			archivo >> identificador;
+		}
+		archivo.close();
+	}
+	else {
+		apertura = false;
+	}
+	return apertura;
 }
 
 int main()
