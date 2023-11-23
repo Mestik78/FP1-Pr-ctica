@@ -67,7 +67,7 @@ tTipoPosicion stringToEnum(string s) {
     return tipo;
 }
 
-void leeCodigosAsignaturas(ifstream& archivo, string identificador, tCarretera& carretera) {
+void cargaElementoCarretera(ifstream& archivo, string identificador, tCarretera& carretera) {
 	int count;
     //la siguiente palabra es el número de veces que aparecen
 	archivo >> count;
@@ -95,7 +95,7 @@ bool cargaCarretera(tCarretera& carretera) {
         //quita la primera palabra de "archivo" y la almacena en "palabra"
 		archivo >> identificador;
 		while (identificador != "XX") {
-			leeCodigosAsignaturas(archivo, identificador, carretera);
+			cargaElementoCarretera(archivo, identificador, carretera);
 			archivo >> identificador;
 		}
 		archivo.close();
