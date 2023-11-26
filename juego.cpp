@@ -7,7 +7,7 @@ using namespace std;
 const int LONG_CARRETERA = 10;
 const int MAX_PASOS = 3;
 const int TIEMPO_PARADO = 2;
-const bool DEBUG = true;
+const bool DEBUG = false;
 
 
 const int CHAR_LINEA_HORIZONTAL = 205; // ˭
@@ -32,14 +32,14 @@ void iniciaCoche(int&, int&);
 void dibujarLinea(int posIni, int PosFin, int ascii);
 void dibujarLineaHorizontalSuperior();
 void dibujarLineaHorizontalInferior();
-void dibujarCarril(int posCoche, tCarretera carretera);
+void dibujaCarril(int posCoche, tCarretera carretera);
 void dibujarCarretera(int posCoche, tCarretera carretera);
 
 bool haLlegado(int posCoche);
 int pideNumPasos();
 bool esSorpresa(int posCoche, tCarretera carretera);
 bool esClavo(int posCoche, tCarretera carretera);
-int buscaSiguientePosSorpresa(int posCoche, tCarretera carretera);
+int buscaSiguientePosSorpresa(int posCoche, const tCarretera carretera);
 
 int avanza(int posCoche);
 
@@ -53,7 +53,6 @@ void iniciaCarril(tCarretera carretera) {
     {
         carretera[i] = NORMAL;
     }
-    
 }
 
 tTipoPosicion stringToEnum(string s) {
@@ -84,9 +83,8 @@ bool cargaCarretera(tCarretera& carretera) {
     
     bool apertura = true;
     string nombreArchivo;
-    /*cout << "Introduce el nombre del archivo que se va a importar: ";
-    cin >> nombreArchivo;*/
-    nombreArchivo = "carriles.txt"; // debug
+    cout << "Introduce el nombre del archivo que se va a importar: ";
+    cin >> nombreArchivo;
     
 	ifstream archivo;
 	archivo.open(nombreArchivo);
@@ -110,20 +108,23 @@ int main()
 {
     srand(time(NULL));
     tCarretera carretera;
-    cargaCarretera(carretera);
+    bool cargaCorrecta = cargaCarretera(carretera);
     
-    bool repetir = true;
-    while (repetir) {
-        simulaCarrera(carretera);
-        cout << "FIN DE LA SIMULACION" << endl;
-        cout << "¿Quieres repetir? (S o N): ";
-        string respuesta;
-        respuesta = getchar();
-        if (respuesta != "S" && respuesta != "s") {
-            repetir = false;
+    if (cargaCorrecta) {
+        bool repetir = true;
+        while (repetir) {
+            simulaCarrera(carretera);
+            cout << "FIN DE LA SIMULACION" << endl;
+            cout << "¿Quieres repetir? (S o N): ";
+            string respuesta;
+            cin >> respuesta;
+            if (respuesta != "S" && respuesta != "s") {
+                repetir = false;
+            }
         }
+    } else {
+        cout << "No se ha podido cargar el archvo." << endl;
     }
-    
 }
 
 
@@ -141,15 +142,15 @@ void simulaCarrera(tCarretera carretera) {
     while (not haLlegado(posCoche)) {
         avanzaCarril(carretera, posCoche, tiempoPinchadoRestante);
     }
-    return;
 }
 void avanzaCarril(tCarretera carretera, int& posCoche, int& tiempoPinchadoRestante) {
     if (tiempoPinchadoRestante == 0) {
         posCoche = avanza(posCoche);
+        dibujarCarretera(posCoche, carretera);
 
         if (esClavo(posCoche, carretera)) {
             tiempoPinchadoRestante = TIEMPO_PARADO;
-            cout << "Has pinchado... estaras" << tiempoPinchadoRestante << "pasos sin moverte" << endl;
+            cout << "Has pinchado... estaras " << tiempoPinchadoRestante << " pasos sin moverte" << endl;
             char a;
             a = getchar();
         }
@@ -162,9 +163,9 @@ void avanzaCarril(tCarretera carretera, int& posCoche, int& tiempoPinchadoRestan
         char a;
         a = getchar();
         tiempoPinchadoRestante--;
+        
+        dibujarCarretera(posCoche, carretera);
     }
-
-    dibujarCarretera(posCoche, carretera);
 }
 
 int avanza (int posCoche) {
@@ -172,7 +173,9 @@ int avanza (int posCoche) {
         cout << "Pulsa enter para continuar" << endl;
         char a;
         a = getchar();
-        posCoche += 1 + rand() % MAX_PASOS;
+        int pasos = 1 + rand() % MAX_PASOS;
+        cout << "Avanzas " << pasos << " pasos" << endl;
+        posCoche += pasos;
     } else {
         posCoche += pideNumPasos();
         if (posCoche < 0) {
@@ -216,8 +219,9 @@ void dibujarLineaHorizontalInferior()
     cout << char(CHAR_ESQUINA_INFERIOR_DERECHA);
     cout << endl;
 }
-void dibujarCarril(int posCoche, tCarretera carretera)
+void dibujaCarril(int posCoche, tCarretera carretera)
 {
+    // --- Clavos / Sorpresas ---
     cout << char(CHAR_LINEA_VERTICAL);
     for (int i = 0; i < LONG_CARRETERA; i++)
     {
@@ -236,20 +240,20 @@ void dibujarCarril(int posCoche, tCarretera carretera)
     cout << char(CHAR_LINEA_VERTICAL);
     cout << endl;
 
+    // --- Coche ---
     cout << char(CHAR_LINEA_VERTICAL);
     dibujarLinea(0, posCoche, CHAR_NORMAL);
     cout << char(CHAR_COCHE);
     dibujarLinea(posCoche + 1, LONG_CARRETERA , CHAR_NORMAL);
     cout << char(CHAR_LINEA_VERTICAL);
     cout << endl;
-
-
 }
+
 void dibujarCarretera(int posCoche, tCarretera carretera)
 {
     dibujarLineaHorizontalSuperior();
-    dibujarPosiciones();
-    dibujarCarril(posCoche, carretera);
+    //dibujarPosiciones();
+    dibujaCarril(posCoche, carretera);
     dibujarLineaHorizontalInferior();
 }
     
@@ -272,45 +276,32 @@ bool esClavo(int posCoche, tCarretera carretera) {
     return carretera[posCoche] == CLAVO;
 }
 
-int buscaSiguientePosSorpresa(int posCoche, tCarretera carretera) {
-    bool buscarSiguiente = (rand()%2==0);
+int buscaSorpresa(const tCarretera carretera, int pos, int incr) {
+    pos += incr; //pos ya es una sorpresa
+    while (pos < LONG_CARRETERA && pos > 0 && carretera[pos] != SORPRESA) {
+        pos += incr;
+    }
+    if (pos >= LONG_CARRETERA || pos <= 0) {
+        cout << "No habia sorpresas en tu camino" << endl;
+        pos = 0;
+    }
+    return pos;
+}
+
+int buscaSiguientePosSorpresa(int posCoche, const tCarretera carretera) {
+    int aleatorio = rand() %2;
     
-    int siguienteSorpresa = -1;
-    int primeraSorpresa = -1;
-
-    if (buscarSiguiente) {
-        for (int i = 0; i < LONG_CARRETERA; i++)
-        {
-            if (carretera[i] == SORPRESA) {
-                if (primeraSorpresa == -1) {
-                    primeraSorpresa = i;
-                }
-                if (i > posCoche && siguienteSorpresa == -1) {
-                    siguienteSorpresa = i;
-                }
-            }
-        }
-    } else {
-        for (int i = LONG_CARRETERA-1; i >= 0 ; i--)
-        {
-            if (carretera[i] == SORPRESA) {
-                if (primeraSorpresa == -1) {
-                    primeraSorpresa = i;
-                }
-                if (i > posCoche && siguienteSorpresa == -1) {
-                    siguienteSorpresa = i;
-                }
-            }
-        }
+    int SiguienteSorpresa;
+    if (aleatorio == 1) {
+        cout << "Hoy no es tu dia de suerte, retrocedes a la sorpresa anterior" << endl;
+        int incr =-1;
+        SiguienteSorpresa = buscaSorpresa(carretera, posCoche, incr);
+        
     }
-
-    if (siguienteSorpresa == -1) {
-        siguienteSorpresa = primeraSorpresa;
+    else {
+        cout << "Felicidades avanzas a la siguiente sorpresa" << endl; 
+        int incr = 1;
+        SiguienteSorpresa = buscaSorpresa(carretera, posCoche, incr);
     }
-
-    if (siguienteSorpresa == -1) {
-        siguienteSorpresa = 0;
-    }
-
-    return siguienteSorpresa;
+    return SiguienteSorpresa;
 }
